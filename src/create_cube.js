@@ -22,7 +22,7 @@ function createCube(dimensions, measures, outCollection) {
       [minField]: { $min: `$${measure}` },
       [maxField]: { $max: `$${measure}` },
       [countField]: {
-        $sum: { $cond: { if: `$${measure}`, then: 1, else: 0 } },
+              $sum: { $cond: { if: { $exists: `$${measure}` }, then: 1, else: 0 } },
       },
     };
   };

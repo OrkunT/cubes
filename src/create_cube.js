@@ -12,20 +12,21 @@ function createCube(dimensions, measures, outCollection) {
   const dollaredDimensions = dimensions.map((d) => `$${d}`);
 
   const mapMeasure = (measure) => {
-    const sumField = `${measure}_sum`;
-    const minField = `${measure}_min`;
-    const maxField = `${measure}_max`;
-    const countField = `${measure}_count`;
+  const sumField = `${measure}_sum`;
+  const minField = `${measure}_min`;
+  const maxField = `${measure}_max`;
+  const countField = `${measure}_count`;
 
-    return {
-      [sumField]: { $sum: `$${measure}` },
-      [minField]: { $min: `$${measure}` },
-      [maxField]: { $max: `$${measure}` },
-      [countField]: {
-              $sum: { $cond: { if: { $exists: `$${measure}` }, then: 1, else: 0 } },
-      },
-    };
+  return {
+    [sumField]: { $sum: `$${measure}` },
+    [minField]: { $min: `$${measure}` },
+    [maxField]: { $max: `$${measure}` },
+    [countField]: {
+      $sum: { $cond: { if: { $ifNull: [`$${measure}`, false] }, then: 1, else: 0 } },
+    },
   };
+};
+
 
   const mappedMeasures = measures.reduce((acc, val) => {
     return { ...acc, ...mapMeasure(val) };

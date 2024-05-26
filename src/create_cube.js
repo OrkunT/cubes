@@ -9,35 +9,32 @@ const zipObject = require("lodash").zipObject;
 function createCube(dimensions, measures, outCollection) {
   // replace dots with underscores
   const dashedDimensions = dimensions.map((d) => d.replace(".", "_"));
-  const dollaredDimensions = dimensions.map((d) => `$${d}`);
-
+  
   const mapMeasure = (measure) => {
-  const sumField = `${measure}_sum`;
-  const minField = `${measure}_min`;
-  const maxField = `${measure}_max`;
-  const countField = `${measure}_count`;
-
-  return {
-    [sumField]: { $sum: `$${measure}` },
-    [minField]: { $min: `$${measure}` },
-    [maxField]: { $max: `$${measure}` },
-    [countField]: {
-      $sum: { $cond: { if: { $ifNull: [`$${measure}`, false] }, then: 1, else: 0 } },
-    },
+    const sumField = `${measure}_sum`;
+    const minField = `${measure}_min`;
+    const maxField = `${measure}_max`;
+    const countField = `${measure}_count`;
+  
+    return {
+      [sumField]: { $sum: `$${measure}` },
+      [minField]: { $min: `$${measure}` },
+      [maxField]: { $max: `$${measure}` },
+      [countField]: {
+        $sum: { $cond: { if: { $ifNull: [`$${measure}`, false] }, then: 1, else: 0 } },
+      },
+    };
   };
-};
-
-
+  
   const mappedMeasures = measures.reduce((acc, val) => {
     return { ...acc, ...mapMeasure(val) };
   }, {});
 
-  // cleaning up measures (create measure.min, measure.max etc.)
   const nestedMeasure = (measure) => {
-    const sumField = `$${measure}_sum`;
-    const minField = `$${measure}_min`;
-    const maxField = `$${measure}_max`;
-    const countField = `$${measure}_count`;
+    const sumField = `${measure}_sum`;
+    const minField = `${measure}_min`;
+    const maxField = `${measure}_max`;
+    const countField = `${measure}_count`;
 
     return {
       [measure]: {
@@ -53,14 +50,16 @@ function createCube(dimensions, measures, outCollection) {
     return { ...acc, ...nestedMeasure(val) };
   }, {});
 
-  // cleaning up dimensions (lifting them to the root level)
-  const _idDimensions = dashedDimensions.map((d) => `$_id.${d}`);
-  const unwrappedDimensions = zipObject(dimensions, _idDimensions);
+  const unwrappedDimensions = dashedDimensions.reduce((acc, val) => {
+    return { ...acc, [val]: `$_id.${val}` };
+  }, {});
 
   return [
     {
       $group: {
-        _id: zipObject(dashedDimensions, dollaredDimensions),
+        _id: dashedDimensions.reduce((acc, val) => {
+          return { ...acc, [val]: `$${val}` };
+        }, {}),
         count: { $sum: 1 },
         ...mappedMeasures,
       },
@@ -76,5 +75,6 @@ function createCube(dimensions, measures, outCollection) {
     { $out: outCollection },
   ];
 }
+
 
 module.exports = createCube;

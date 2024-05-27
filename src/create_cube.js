@@ -73,7 +73,7 @@ function createCube(dimensions, measures, outCollection) {
         ...unwrappedDimensions,
       },
     },
-    { $out: outCollection },
+    { $merge: outCollection },
   ];
 }
 
